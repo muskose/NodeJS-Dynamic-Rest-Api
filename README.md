@@ -1,4 +1,4 @@
 NodeJS-Dynamic-Rest-Api
 =======================
 
-A Dynamic Rest Api, Written In NodeJS
+A Dynamic Rest Api In NodeJS ( MongoDB )
