@@ -1,144 +1,248 @@
-/**
- *
- * Call Express
- */
+
+// Init Config Params
+var config_params = require('./config.js');
+
+// Call Express
 var express = require('express');
-/**
- *
- * Call Mongoose
- */
+
+// Call Mongoose
 var mongoose = require('mongoose');
-/**
- *
- * Call Database
- */
-var Database = require('./database.js');
-Database.mongoose = mongoose;
-/**
- *
- * Connect Database
- */
-mongoose.connect('mongodb://127.0.0.1:27017');
-/**
- *
- * Check If Connection is OK
- */
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function callback () {
-    console.log("connected to mongo");
-});
-/**
- *
- * Define App Object
- */
+
+// Init Database Object
+var Database = require('./database.js')(mongoose);
+
+// Init Route Models
+var app_routes = require('./route_models.js')();
+
+// Init Route Models
+var utilities = require('./utilities.js')();
+
+// Database Connection Variables & Connection
+var conn_string = config_params.db_address+':'+config_params.db_port+'/'+config_params.db_name;
+var conn_options = {
+    db: { native_parser: true },
+    server: { poolSize: 5 }
+}
+mongoose.connect(conn_string, conn_options);
+
+
+// Define App Object
 var app = express();
+
+// For Post Variables
 app.use(express.bodyParser());
-/**
- *
- * Home Route
- */
-app.get('/', function(req, res){
-  var body = 'Hello Digifan';
-  res.setHeader('Content-Type', 'text/plain');
-  res.setHeader('Content-Length', body.length);
-  res.end(body);
+
+// Set Trust Proxy For Proxy IPs
+app.set("trust proxy", true);
+
+
+// In Array Funcion
+Array.prototype.in_array = function(p_val) {
+    for(var i = 0, l = this.length; i < l; i++) {
+        if(this[i] === p_val) {
+            return true;
+        }
+    }
+    return false;
+};
+
+// Home Route
+app.get('/', function(req, res) {
+    var response = 'digifan api v.0.1 alpha';
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Length', response.length);
+    res.end(response);
 });
+
 /**
- *
  * Insert Route
  */
-app.post("/users/insert_friend", function(req, res) {
+app.post("/insert", function(req, res) {
 
-    var required_fields  = ['info'];
-    var validation       = true;
-
-    for (var i = 0; i < required_fields.length; i++) {
-        if(req.body[required_fields[i]] == undefined) {
-            validation = false;
-        }
+    if(!utilities.requester_check(req.ip)) {
+        return false;
     }
-
-    if(validation) {
-        var info = req.body.info;
-        info = JSON.parse(info);
-        var schema = '';
-        for(var field in info) {
-            schema = schema+field+':';
-            for(dataType in info[field]) {
-                schema = schema+dataType+',';
-            }
-        }
-        schema = schema.substr(0, schema.length-1);
-        schema = '{'+schema+'}';
-
-        Database.schema_builder("testing_table", schema);
-
-        /*
-        Database.schema_builder("digifan_user_friends", Structure);
-
-        var Information = {
-            "user_ID": req.body.user_ID,
-            "friend_type":req.body.friend_type,
-            "friend_id":req.body.friend_id,
-            "friend_name":req.body.friend_name,
-            "friend_screen_name":req.body.friend_screen_name
-        };
-
-        Result = 'insert error';
-        if(Database.insert("digifan_user_friends", Information)) {
-            Result = '1';
-        }
-        */
-
-
+    if(!app_routes.insert.check_and_get_fields(req.body)) {
+        console.log("please check your fields");
+        utilities.output(res, 400, 'please check your fields');
+        return false;
     }
-    else {
-
+    var collectionName = app_routes.insert.rest_data.collection_name;
+    if(Database.models[collectionName] === undefined) {
+        console.log("collection does not exists");
+        utilities.output(res, 400, 'collection does not exists');
+        return false;
     }
-
-    var Result = 'asdasd';
-
-    res.setHeader('Content-Type', 'text/plain');
-    res.setHeader('Content-Length', Result.length);
-    res.end(Result);
+    var information = JSON.parse(app_routes.insert.rest_data.information);
+    if(!Database.check_data_fields(collectionName, information)) {
+        console.log("data field validation error, please provide correct fields");
+        utilities.output(res, 400, 'data field validation error, please provide correct fields');
+        return false;
+    }
+    console.log("data field validation: true");
+    Database.insert(collectionName, information, function(result) {
+        if(!result) {
+            console.log("insert error, please contact api guy, do not lose this log");
+            utilities.output(res, 400, 'insert error, please contact api guy, do not lose this log');
+            return true;
+        }
+        else {
+            console.log("insert success, have a nice day");
+            utilities.output(res, 200, 'insert success, have a nice day');
+            return true;
+        }
+    });
 
 });
 
+/**
+ * Update Route
+ */
+app.put("/update", function(req, res) {
+
+    if(!utilities.requester_check(req.ip)) {
+        return false;
+    }
+    if(!app_routes.update.check_and_get_fields(req.body)) {
+        console.log("please check your fields");
+        output(res, 400, 'please check your fields');
+        return false;
+    }
+    var collectionName = app_routes.update.rest_data.collection_name;
+    if(Database.models[collectionName] === undefined) {
+        console.log("collection does not exists");
+        output(res, 400, 'collection does not exists');
+        return false;
+    }
+    var rules = JSON.parse(app_routes.update.rest_data.rules);
+    if(!Database.rule_validation(collectionName, rules)) {
+        console.log("rule validation error, your field(s) does not exists in api");
+        output(res, 400, 'rule validation error, your field(s) does not exists in api');
+        return false;
+    }
+    console.log("rule validation: true");
+    var information = JSON.parse(app_routes.update.rest_data.information);
+    if(!Database.information_validation(collectionName, information)) {
+        console.log("information validation error, your field(s) does not exists in api");
+        output(res, 400, 'information validation error, your field(s) does not exists in api');
+        return false;
+    }
+    console.log("information validation: true");
+    var condition = Database.condition_parser(rules);
+    if(!condition) {
+        console.log("condition validation error, your sql operator has not supported yet");
+        output(res, 400, 'condition validation error, your sql operator has not supported yet');
+        return false;
+    }
+    console.log("condition validation: true");
+    Database.update(collectionName, information, condition, function(result) {
+        if(!result) {
+            console.log("update error, please contact api guy, do not lose this log");
+            output(res, 400, 'update error, please contact api guy, do not lose this log');
+        }
+        else {
+            console.log("update success, have a nice day");
+            output(res, 400, 'update success, have a nice day');
+        }
+    });
+
+});
+
+/**
+ * Update Route
+ */
+app.del("/delete", function(req, res) {
+
+    if(!utilities.requester_check(req.ip)) {
+        return false;
+    }
+    if(!app_routes.delete.check_and_get_fields(req.body)) {
+        console.log("please check your fields");
+        output(res, 400, 'please check your fields');
+        return false;
+    }
+    var collectionName = app_routes.delete.rest_data.collection_name;
+    if(Database.models[collectionName] === undefined) {
+        console.log("collection does not exists");
+        output(res, 400, 'collection does not exists');
+        return false;
+    }
+    var rules = JSON.parse(app_routes.delete.rest_data.rules);
+    if(!Database.rule_validation(collectionName, rules)) {
+        console.log("rule validation error, your field(s) does not exists in api");
+        output(res, 400, 'rule validation error, your field(s) does not exists in api');
+        return false;
+    }
+    console.log("rule validation: true");
+    var condition = Database.condition_parser(rules);
+    if(!condition) {
+        console.log("condition validation error, your sql operator has not supported yet");
+        output(res, 400, 'condition validation error, your sql operator has not supported yet');
+        return false;
+    }
+    console.log("condition validation: true");
+    Database.delete(collectionName, condition, function(result) {
+        if(result === false) {
+            console.log("delete error, please contact api guy, do not lose this log");
+            output(res, 400, 'update error, please contact api guy, do not lose this log');
+        }
+        else {
+            console.log("delete success, "+result+" record(s) deleted, have a nice day");
+            output(res, 400, 'delete success, '+result+' record(s) deleted, have a nice day');
+        }
+    });
+
+});
+
+/**
+ * Update Route
+ */
+app.get("/select", function(req, res) {
+
+    if(!utilities.requester_check(req.ip)) {
+        return false;
+    }
+    if(!app_routes.select.check_and_get_fields(req.body)) {
+        console.log("please check your fields");
+        output(res, 400, 'please check your fields');
+        return false;
+    }
+    var collectionName = app_routes.select.rest_data.collection_name;
+    if(Database.models[collectionName] === undefined) {
+        console.log("collection does not exists");
+        output(res, 400, 'collection does not exists');
+        return false;
+    }
+    var rules = JSON.parse(app_routes.select.rest_data.rules);
+    if(!Database.rule_validation(collectionName, rules)) {
+        console.log("rule validation error, your field(s) does not exists in api");
+        output(res, 400, 'rule validation error, your field(s) does not exists in api');
+        return false;
+    }
+    console.log("rule validation: true");
+    var condition = Database.condition_parser(rules);
+    if(!condition) {
+        console.log("condition validation error, your sql operator has not supported yet");
+        output(res, 400, 'condition validation error, your sql operator has not supported yet');
+        return false;
+    }
+    console.log("condition validation: true");
+    Database.select(collectionName, condition, function(result) {
+        if(result === false) {
+            console.log("select error, please contact api guy, do not lose this log");
+            output(res, 400, 'select error, please contact api guy, do not lose this log');
+        }
+        else {
+            console.log("select success, "+result.length+" record(s) found, have a nice day");
+            output(res, 400, 'select success, '+result.length+' record(s) found, have a nice day', result);
+        }
+    });
+
+});
 
 /**
  *
- * Update Route
- *
-
-app.put("/users/update_friend", function(req, res) {
-
-    res.setHeader('Content-Type', 'text/plain');
-
-    var required_vars = ["rules","updateinfo"];
-
-    var validation = true;
-
-    for (var i = 0; i < required_vars.length; i++) {
-        //console.log(req.body[required_vars[i]]);
-        if(req.body[required_vars[i]] == undefined) {
-            validation = false;
-        }
-    }
-
-    var result = '';
-    if(validation) {
-        var rules = req.body.rules;
-        var updateinfo = req.body.updateinfo;
-        Database.update("digifan_user_friends", rules, updateinfo);
-    }
-    else {
-        result = 0;
-    }
-    res.setHeader('Content-Length', result.length);
-    res.end(result);
-});
+ * Start App
  */
-
-app.listen(4003);
-console.log('Listening on port 4003');
+app.listen(8007);
+console.log('Listening on port 8007');
