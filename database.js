@@ -2,80 +2,21 @@
 module.exports = function(mongoose) {
     var obc = {
         'version':'0.1.0',
-        'database_name':'digifan',
+        'database_name':'test_database',
         'mongoose':mongoose,
         'models':[],
         'collections':{
-            'digifan_user_facebook_friends':{
+            'users':{
                 'user_id':Number,
-                'friend_id':Number,
-                'friend_name':String,
-                'friend_screen_name':String
+                'user_name':String,
+                'user_surname':String,
+                'user_address':String
             },
-            'digifan_user_twitter_friends':{
-                'user_id':Number,
-                'friend_id':Number,
-                'friend_name':String,
-                'friend_screen_name':String
-            },
-            'digifan_complaint_mails':{
-                'cmail_id':Number,
-                'cmail_type':String,
-                'cmail_mail':String,
-                'cmail_time':String
-            },
-            'digifan_mail_responses':{
-                'mail_response_id':Number,
-                'user_id':Number,
-                'mail_response_mail_address':String,
-                'mail_response_is_viewed':Number,
-                'mail_response_from_mail':String,
-                'mail_response_from_name':String,
-                'mail_response_mail_content':String,
-                'mail_response_mail_subject':String,
-                'mail_response_created_date':String,
-                'rtask_id':Number,
-                'mail_response_check_code':String
-            },
-            'digifan_pending_tasks':{
-                'ptask_id':Number,
-                'responder_id':Number,
-                'user_id':Number,
-                'ptask_added_date':String,
-                'ptask_date':String,
-                'ptask_data':String,
-                'ptask_status':Number
-            },
-            'digifan_short_url':{
-                'url_id':Number,
-                'user_id':Number,
-                'url_code':String,
-                'url_link':String,
-                'url_data':String,
-                'url_created_time':String
-            },
-            'digifan_bounce_mails':{
-                'bmail_id':Number,
-                'bmail_mail':String,
-                'bmail_type':String,
-                'bmail_time':String
-            },
-            'digifan_blocked_mails':{
-                'block_id':Number,
-                'user_id':Number,
-                'block_mail':String,
-                'block_reason':String,
-                'block_time':String
-            },
-            'digifan_user_points':{
-                'score_id':Number,
-                'user_id':Number,
-                'score_created_date':String,
-                'task_id':Number,
-                'module_id':Number,
-                'unique_id':Number,
-                'related_user_id':Number,
-                'score':Number
+            'books': {
+                'book_id':Number,
+                'book_name':String,
+                'book_author':String,
+                'book_price':String
             }
         },
         'set_models': function(callback) {

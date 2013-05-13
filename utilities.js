@@ -15,9 +15,7 @@ module.exports = function() {
         },
         'requester_check': function (remote_address) {
             var safe_ips = [
-                "185.14.187.61",
-                "176.240.195.75",
-                "198.211.125.21"
+                "127.0.0.1"
             ];
             console.log(remote_address);
             for(ip in safe_ips) {

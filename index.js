@@ -48,7 +48,7 @@ Array.prototype.in_array = function(p_val) {
 
 // Home Route
 app.get('/', function(req, res) {
-    var response = 'digifan api v.0.1 alpha';
+    var response = 'node api v.0.1 alpha';
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Content-Length', response.length);
     res.end(response);
